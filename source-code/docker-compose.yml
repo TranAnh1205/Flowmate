@@ -1,0 +1,230 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres-auth:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: ${POSTGRES_USER:-smarttask}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+    volumes:
+      - auth-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smarttask} -d auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-task:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: task_db
+      POSTGRES_USER: ${POSTGRES_USER:-smarttask}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+    volumes:
+      - task-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smarttask} -d task_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-notification:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: ${POSTGRES_USER:-smarttask}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+    volumes:
+      - notification-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smarttask} -d notification_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${AUTH_PORT:-8081}:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USERNAME: ${POSTGRES_USER:-smarttask}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+      JWT_KEY_PATH: /var/lib/smarttask-keys/jwt-key.json
+      BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-false}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-Flowmate Administrator}
+    volumes:
+      - auth-key-data:/var/lib/smarttask-keys
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  task-service:
+    build:
+      context: .
+      dockerfile: services/task-service/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${TASK_PORT:-8082}:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USERNAME: ${POSTGRES_USER:-smarttask}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+      AUTH_JWK_SET_URI: http://auth-service:8081/.well-known/jwks.json
+      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?Set INTERNAL_SERVICE_KEY in .env}
+      REMINDER_SYNC_POLL_DELAY_MS: ${REMINDER_SYNC_POLL_DELAY_MS:-2000}
+    depends_on:
+      postgres-task:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${NOTIFICATION_PORT:-8084}:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_USERNAME: ${POSTGRES_USER:-smarttask}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+      AUTH_JWK_SET_URI: http://auth-service:8081/.well-known/jwks.json
+      REMINDER_POLL_DELAY_MS: ${REMINDER_POLL_DELAY_MS:-2000}
+      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?Set INTERNAL_SERVICE_KEY in .env}
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: services/ai-service/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${AI_PORT:-8083}:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      AUTH_JWK_SET_URI: http://auth-service:8081/.well-known/jwks.json
+      TASK_SERVICE_URL: http://task-service:8082
+      AUTH_SERVICE_URL: http://auth-service:8081
+      AI_API_KEY: ${AI_API_KEY:-disabled}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com}
+      AI_MODEL: ${AI_MODEL:-gpt-4.1-mini}
+      AI_ENABLED: ${AI_ENABLED:-false}
+      AI_RATE_LIMIT_ENABLED: ${AI_RATE_LIMIT_ENABLED:-true}
+      AI_RATE_LIMIT_PER_MINUTE: ${AI_RATE_LIMIT_PER_MINUTE:-10}
+      AI_RATE_LIMIT_PER_DAY: ${AI_RATE_LIMIT_PER_DAY:-30}
+      AI_MAX_CONCURRENT: ${AI_MAX_CONCURRENT:-1}
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      task-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: gateway-service/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8090}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      AUTH_JWK_SET_URI: http://auth-service:8081/.well-known/jwks.json
+      AUTH_SERVICE_URL: http://auth-service:8081
+      TASK_SERVICE_URL: http://task-service:8082
+      AI_SERVICE_URL: http://ai-service:8083
+      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:*,http://127.0.0.1:*}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      RATE_LIMIT_AUTH_REPLENISH_RATE: ${RATE_LIMIT_AUTH_REPLENISH_RATE:-5}
+      RATE_LIMIT_AUTH_BURST_CAPACITY: ${RATE_LIMIT_AUTH_BURST_CAPACITY:-600}
+      RATE_LIMIT_AUTH_REQUESTED_TOKENS: ${RATE_LIMIT_AUTH_REQUESTED_TOKENS:-60}
+      RATE_LIMIT_GENERAL_REPLENISH_RATE: ${RATE_LIMIT_GENERAL_REPLENISH_RATE:-100}
+      RATE_LIMIT_GENERAL_BURST_CAPACITY: ${RATE_LIMIT_GENERAL_BURST_CAPACITY:-1800}
+      RATE_LIMIT_GENERAL_REQUESTED_TOKENS: ${RATE_LIMIT_GENERAL_REQUESTED_TOKENS:-60}
+      RATE_LIMIT_AI_REPLENISH_RATE: ${RATE_LIMIT_AI_REPLENISH_RATE:-10}
+      RATE_LIMIT_AI_BURST_CAPACITY: ${RATE_LIMIT_AI_BURST_CAPACITY:-180}
+      RATE_LIMIT_AI_REQUESTED_TOKENS: ${RATE_LIMIT_AI_REQUESTED_TOKENS:-60}
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      task-service:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      gateway-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  redis-data:
+  auth-data:
+  auth-key-data:
+  task-data:
+  notification-data:

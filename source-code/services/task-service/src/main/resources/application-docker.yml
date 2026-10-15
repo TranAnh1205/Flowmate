@@ -1,0 +1,4 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-task:5432/task_db
+

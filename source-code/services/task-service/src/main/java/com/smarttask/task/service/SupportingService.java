@@ -1,0 +1,30 @@
+package com.smarttask.task.service;
+
+import com.smarttask.task.domain.*; import com.smarttask.task.dto.TaskDtos.*; import com.smarttask.task.exception.TaskApiException; import com.smarttask.task.repository.*;
+import org.springframework.http.HttpStatus; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional; import java.time.Instant; import java.util.*;
+
+@Service
+public class SupportingService{
+ private final CategoryRepository categories; private final TagRepository tags; private final GoalRepository goals; private final TaskRepository tasks; private final SubtaskRepository subtasks;
+ public SupportingService(CategoryRepository categories,TagRepository tags,GoalRepository goals,TaskRepository tasks,SubtaskRepository subtasks){this.categories=categories;this.tags=tags;this.goals=goals;this.tasks=tasks;this.subtasks=subtasks;}
+ @Transactional(readOnly=true) public List<CategoryResponse> categories(UUID u){return categories.findAllByUserIdOrderByNameAsc(u).stream().map(this::category).toList();}
+ @Transactional public CategoryResponse createCategory(UUID u,CategoryRequest r){if(categories.existsByUserIdAndNameIgnoreCase(u,r.name().trim()))throw new TaskApiException(HttpStatus.CONFLICT,"CATEGORY_ALREADY_EXISTS","Danh mục đã tồn tại");Category x=new Category();x.setUserId(u);x.setName(r.name().trim());x.setColor(r.color());x.setIcon(r.icon());return category(categories.save(x));}
+ @Transactional public CategoryResponse updateCategory(UUID u,UUID id,CategoryRequest r){Category x=categories.findByIdAndUserId(id,u).orElseThrow(()->nf("CATEGORY_NOT_FOUND","Không tìm thấy danh mục"));String name=r.name().trim();if(!x.getName().equalsIgnoreCase(name)&&categories.existsByUserIdAndNameIgnoreCase(u,name))throw new TaskApiException(HttpStatus.CONFLICT,"CATEGORY_ALREADY_EXISTS","Danh mục đã tồn tại");x.setName(name);x.setColor(r.color());x.setIcon(r.icon());return category(x);}
+ @Transactional public void deleteCategory(UUID u,UUID id){Category x=categories.findByIdAndUserId(id,u).orElseThrow(()->nf("CATEGORY_NOT_FOUND","Không tìm thấy danh mục"));categories.delete(x);}
+ @Transactional(readOnly=true) public List<TagResponse> tags(UUID u){return tags.findAllByUserIdOrderByNameAsc(u).stream().map(this::tag).toList();}
+ @Transactional public TagResponse createTag(UUID u,TagRequest r){String name=r.name().trim();if(tags.existsByUserIdAndNameIgnoreCase(u,name))throw new TaskApiException(HttpStatus.CONFLICT,"TAG_ALREADY_EXISTS","Nhãn đã tồn tại");Tag x=new Tag();x.setUserId(u);x.setName(name);x.setColor(r.color());return tag(tags.save(x));}
+ @Transactional public TagResponse updateTag(UUID u,UUID id,TagRequest r){Tag x=tags.findByIdAndUserId(id,u).orElseThrow(()->nf("TAG_NOT_FOUND","Không tìm thấy nhãn"));String name=r.name().trim();if(!x.getName().equalsIgnoreCase(name)&&tags.existsByUserIdAndNameIgnoreCase(u,name))throw new TaskApiException(HttpStatus.CONFLICT,"TAG_ALREADY_EXISTS","Nhãn đã tồn tại");x.setName(name);x.setColor(r.color());return tag(x);}
+ @Transactional public void deleteTag(UUID u,UUID id){Tag x=tags.findByIdAndUserId(id,u).orElseThrow(()->nf("TAG_NOT_FOUND","Không tìm thấy nhãn"));tags.delete(x);}
+ @Transactional(readOnly=true) public List<GoalResponse> goals(UUID u){return goals.findAllByUserIdOrderByTargetDateAsc(u).stream().map(this::goal).toList();}
+ @Transactional public GoalResponse createGoal(UUID u,GoalRequest r){Goal x=new Goal();x.setUserId(u);apply(x,r);return goal(goals.save(x));}
+ @Transactional public GoalResponse updateGoal(UUID u,UUID id,GoalRequest r){Goal x=goals.findByIdAndUserId(id,u).orElseThrow(()->nf("GOAL_NOT_FOUND","Không tìm thấy mục tiêu"));apply(x,r);return goal(x);}
+ @Transactional public void deleteGoal(UUID u,UUID id){Goal x=goals.findByIdAndUserId(id,u).orElseThrow(()->nf("GOAL_NOT_FOUND","Không tìm thấy mục tiêu"));goals.delete(x);}
+ @Transactional public SubtaskResponse addSubtask(UUID u,UUID taskId,SubtaskRequest r){task(u,taskId);Subtask x=new Subtask();x.setTaskId(taskId);x.setTitle(r.title().trim());x.setPosition(r.position()==null?subtasks.findAllByTaskIdOrderByPositionAsc(taskId).size():r.position());return subtask(subtasks.save(x));}
+ @Transactional public SubtaskResponse updateSubtask(UUID u,UUID taskId,UUID id,SubtaskRequest r){task(u,taskId);Subtask x=subtasks.findById(id).filter(s->s.getTaskId().equals(taskId)).orElseThrow(()->nf("SUBTASK_NOT_FOUND","Không tìm thấy công việc con"));x.setTitle(r.title().trim());if(r.position()!=null)x.setPosition(r.position());return subtask(x);}
+ @Transactional public SubtaskResponse completeSubtask(UUID u,UUID taskId,UUID id){task(u,taskId);Subtask x=subtasks.findById(id).filter(s->s.getTaskId().equals(taskId)).orElseThrow(()->nf("SUBTASK_NOT_FOUND","Không tìm thấy công việc con"));x.setCompleted(!x.isCompleted());x.setCompletedAt(x.isCompleted()?Instant.now():null);return subtask(x);}
+ @Transactional public void deleteSubtask(UUID u,UUID taskId,UUID id){task(u,taskId);Subtask x=subtasks.findById(id).filter(s->s.getTaskId().equals(taskId)).orElseThrow(()->nf("SUBTASK_NOT_FOUND","Không tìm thấy công việc con"));subtasks.delete(x);}
+ private Task task(UUID u,UUID id){return tasks.findByIdAndUserIdAndDeletedAtIsNull(id,u).orElseThrow(()->nf("TASK_NOT_FOUND","Không tìm thấy công việc"));}
+ private void apply(Goal x,GoalRequest r){x.setTitle(r.title().trim());x.setDescription(r.description());x.setStatus(r.status()==null?"ACTIVE":r.status());x.setTargetDate(r.targetDate());}
+ private CategoryResponse category(Category x){return new CategoryResponse(x.getId(),x.getName(),x.getColor(),x.getIcon());} private TagResponse tag(Tag x){return new TagResponse(x.getId(),x.getName(),x.getColor());} private GoalResponse goal(Goal x){return new GoalResponse(x.getId(),x.getTitle(),x.getDescription(),x.getStatus(),x.getTargetDate());} private SubtaskResponse subtask(Subtask x){return new SubtaskResponse(x.getId(),x.getTitle(),x.isCompleted(),x.getPosition(),x.getCompletedAt());}
+ private TaskApiException nf(String c,String m){return new TaskApiException(HttpStatus.NOT_FOUND,c,m);}
+}

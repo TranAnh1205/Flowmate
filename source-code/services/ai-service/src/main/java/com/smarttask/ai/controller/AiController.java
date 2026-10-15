@@ -1,0 +1,5 @@
+package com.smarttask.ai.controller;
+import com.smarttask.ai.dto.AiDtos.*;import com.smarttask.ai.service.AiAssistantService;import jakarta.validation.Valid;import org.springframework.http.HttpHeaders;import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/v1/ai")
+public class AiController{private final AiAssistantService s;public AiController(AiAssistantService s){this.s=s;}@PostMapping("/parse-task")public ParsedTaskResponse parse(@Valid@RequestBody ParseTaskRequest r){return s.parse(r);}@PostMapping("/breakdown-task")public BreakdownResponse breakdown(@Valid@RequestBody BreakdownRequest r){return s.breakdown(r);}@PostMapping("/suggest-priority")public PriorityResponse priority(@Valid@RequestBody PriorityRequest r){return s.priority(r);}@PostMapping("/daily-plan")public DailyPlanResponse plan(@Valid@RequestBody DailyPlanRequest r,@RequestHeader(HttpHeaders.AUTHORIZATION)String auth){return s.dailyPlan(r,auth);}@PostMapping("/weekly-summary")public WeeklySummaryResponse weekly(@RequestHeader(HttpHeaders.AUTHORIZATION)String auth){return s.weekly(auth);}}
+

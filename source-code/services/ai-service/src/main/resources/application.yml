@@ -1,0 +1,32 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: ai-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_JWK_SET_URI:http://localhost:8081/.well-known/jwks.json}
+  ai:
+    openai:
+      api-key: ${AI_API_KEY:disabled}
+      base-url: ${AI_BASE_URL:https://api.openai.com}
+      chat:
+        options:
+          model: ${AI_MODEL:gpt-4.1-mini}
+app:
+  ai:
+    enabled: ${AI_ENABLED:false}
+    rate-limit:
+      enabled: ${AI_RATE_LIMIT_ENABLED:true}
+      requests-per-minute: ${AI_RATE_LIMIT_PER_MINUTE:10}
+      requests-per-day: ${AI_RATE_LIMIT_PER_DAY:30}
+      max-concurrent: ${AI_MAX_CONCURRENT:1}
+  services:
+    task-url: ${TASK_SERVICE_URL:http://localhost:8082}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

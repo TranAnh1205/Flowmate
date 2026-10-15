@@ -1,0 +1,4 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-notification:5432/notification_db
+

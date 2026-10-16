@@ -33,7 +33,7 @@ Bằng chứng hiện tại chỉ ở mã nguồn: `AuthService.register()` tr�
 ## Cách chạy và tiêu chí đọc kết quả
 
 ```powershell
-Set-Location source-code
+# Chạy từ gốc repository
 ./scripts/verify.ps1
 ```
 
@@ -42,7 +42,7 @@ Nếu `mvn clean test` hỏng ở Spring context vì `Unable to establish loopba
 Khi Docker Desktop chạy và `.env` đã cấu hình an toàn:
 
 ```powershell
-Set-Location source-code
+# Chạy từ gốc repository
 ./scripts/verify.ps1 -WithDocker
 ```
 
@@ -51,7 +51,7 @@ E2E nhóm đã có luồng chính và một số ca lỗi trong `scripts/e2e.mjs
 Chạy riêng UI nhóm sau khi frontend, Gateway và các service healthy (cần Microsoft Edge và thư mục có package `playwright`):
 
 ```powershell
-Set-Location source-code
+# Chạy từ gốc repository
 $env:CODEX_NODE_MODULES="<duong-dan-node_modules-co-playwright>"
 node scripts/team-ui-smoke.mjs
 ```
@@ -61,7 +61,7 @@ Script đăng ký hai tài khoản test mới, thao tác qua trình duyệt và 
 Khi Docker chưa hoạt động, có thể kiểm tra riêng giao diện với API giả lập sau `npm run build`:
 
 ```powershell
-Set-Location source-code
+# Chạy từ gốc repository
 $env:CODEX_NODE_MODULES="<duong-dan-node_modules-co-playwright>"
 node scripts/team-ui-mock-smoke.mjs
 ```

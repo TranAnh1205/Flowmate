@@ -19,7 +19,7 @@ const { chromium } = require(path.join(nodeModules, "playwright"));
 const stamp = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const regularEmail = `ui-smoke-${stamp}@smarttask.local`;
 const regularPassword = "UiSmoke@123";
-const artifacts = path.resolve("..", "artifacts", "ui-smoke");
+const artifacts = path.resolve("artifacts", "ui-smoke");
 
 function check(condition, message) {
   if (!condition) throw new Error(message);

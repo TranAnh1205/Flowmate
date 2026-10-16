@@ -7,7 +7,7 @@ Cấu hình Docker Compose hiện phù hợp cho máy chủ đơn hoặc môi tr
 ## Chuẩn bị
 
 1. Cài Docker Engine/Desktop và Docker Compose.
-2. Sao chép `source-code/.env.example` thành `source-code/.env`.
+2. Sao chép `.env.example` thành `.env` tại gốc repository.
 3. Thay toàn bộ giá trị mẫu:
    - `POSTGRES_PASSWORD`: mật khẩu ngẫu nhiên mạnh.
    - `INTERNAL_SERVICE_KEY`: tối thiểu 32 ký tự ngẫu nhiên.
@@ -19,7 +19,7 @@ Cấu hình Docker Compose hiện phù hợp cho máy chủ đơn hoặc môi tr
 ## Kiểm tra và khởi động
 
 ```powershell
-cd source-code
+# Chạy từ gốc repository
 .\scripts\verify.ps1 -WithDocker
 ```
 

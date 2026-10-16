@@ -7,16 +7,17 @@
 **/target/
 **/__pycache__/
 *.pyc
-source-code/frontend/node_modules/
-source-code/frontend/dist/
-source-code/frontend/*.tsbuildinfo
-source-code/frontend/vite.config.js
-source-code/frontend/vite.config.d.ts
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 data/
 
 # Local work, coursework reports/diagrams, exports, and backups stay outside Git.
 .tmp/
 .agents/
+/source-code/
 docx_work/
 artifacts/
 /*.docx
@@ -44,4 +45,4 @@ artifacts/
 *.pfx
 *.jks
 *.pem
-!source-code/services/task-service/src/test/resources/test-public-key.pem
+!services/task-service/src/test/resources/test-public-key.pem

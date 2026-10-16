@@ -12,7 +12,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require(path.join(nodeModules, "playwright"));
 const artifacts = process.env.TEAM_UI_ARTIFACTS
   ? path.resolve(process.env.TEAM_UI_ARTIFACTS)
-  : path.resolve("..", "artifacts", "team-ui-smoke");
+  : path.resolve("artifacts", "team-ui-smoke");
 const stamp = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const password = "TeamUiSmoke@123";
 const ownerEmail = `team-owner-${stamp}@smarttask.local`;

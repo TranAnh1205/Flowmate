@@ -180,7 +180,7 @@ const exitCode = await new Promise((resolve, reject) => {
     env: {
       ...process.env,
       BASE_URL: `http://127.0.0.1:${port}`,
-      TEAM_UI_ARTIFACTS: path.resolve(sourceRoot, "..", "artifacts", "team-ui-mock-smoke"),
+      TEAM_UI_ARTIFACTS: path.resolve(sourceRoot, "artifacts", "team-ui-mock-smoke"),
     },
     stdio: "inherit",
   });

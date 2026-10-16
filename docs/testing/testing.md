@@ -27,7 +27,7 @@
 ## Lệnh chấp nhận cuối
 
 ```bash
-cd source-code
+# Chạy từ gốc repository
 mvn clean test
 cd frontend && npm run build && cd ..
 docker compose config --quiet
@@ -42,7 +42,7 @@ node scripts/team-ui-smoke.mjs
 docker compose ps
 ```
 
-Nếu không cung cấp hai biến Admin, các ca người dùng cá nhân vẫn chạy và nhóm Admin được bỏ qua có thông báo rõ ràng. Hai script tạo email duy nhất theo timestamp nên có thể chạy lặp lại. UI smoke cần package `playwright` trong thư mục `CODEX_NODE_MODULES` và Microsoft Edge; ảnh cùng báo cáo được lưu bên ngoài source tại `../artifacts/ui-smoke`. Database volume được giữ để kiểm tra persistence; dùng `docker compose down -v` chỉ khi muốn reset hoàn toàn.
+Nếu không cung cấp hai biến Admin, các ca người dùng cá nhân vẫn chạy và nhóm Admin được bỏ qua có thông báo rõ ràng. Hai script tạo email duy nhất theo timestamp nên có thể chạy lặp lại. UI smoke cần package `playwright` trong thư mục `CODEX_NODE_MODULES` và Microsoft Edge; ảnh cùng báo cáo được lưu tại `artifacts/ui-smoke` ở gốc repository (thư mục bị Git bỏ qua). Database volume được giữ để kiểm tra persistence; dùng `docker compose down -v` chỉ khi muốn reset hoàn toàn.
 
 Sau khi thêm dự án nhóm, `ProjectServiceIntegrationTest` chạy trên H2. Luồng nhóm đã được mở rộng trong `scripts/e2e.mjs` và có UI smoke riêng `scripts/team-ui-smoke.mjs`; cả hai cần chạy lại trên PostgreSQL khi Docker Desktop hoạt động.
 

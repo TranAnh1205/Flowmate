@@ -1,3 +1,6 @@
+# Preserve existing Docker Compose volume names after moving to the repository root.
+name: source-code
+
 services:
   redis:
     image: redis:7-alpine
@@ -17,7 +20,7 @@ services:
     environment:
       POSTGRES_DB: auth_db
       POSTGRES_USER: ${POSTGRES_USER:-smarttask}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - auth-data:/var/lib/postgresql/data
     healthcheck:
@@ -32,7 +35,7 @@ services:
     environment:
       POSTGRES_DB: task_db
       POSTGRES_USER: ${POSTGRES_USER:-smarttask}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - task-data:/var/lib/postgresql/data
     healthcheck:
@@ -47,7 +50,7 @@ services:
     environment:
       POSTGRES_DB: notification_db
       POSTGRES_USER: ${POSTGRES_USER:-smarttask}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - notification-data:/var/lib/postgresql/data
     healthcheck:
@@ -66,7 +69,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DB_USERNAME: ${POSTGRES_USER:-smarttask}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       JWT_KEY_PATH: /var/lib/smarttask-keys/jwt-key.json
       BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-false}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
@@ -93,7 +96,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DB_USERNAME: ${POSTGRES_USER:-smarttask}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       AUTH_JWK_SET_URI: http://auth-service:8081/.well-known/jwks.json
       NOTIFICATION_SERVICE_URL: http://notification-service:8084
       INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?Set INTERNAL_SERVICE_KEY in .env}
@@ -119,7 +122,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       DB_USERNAME: ${POSTGRES_USER:-smarttask}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in source-code/.env}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       AUTH_JWK_SET_URI: http://auth-service:8081/.well-known/jwks.json
       REMINDER_POLL_DELAY_MS: ${REMINDER_POLL_DELAY_MS:-2000}
       INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:?Set INTERNAL_SERVICE_KEY in .env}
